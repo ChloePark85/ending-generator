@@ -55,7 +55,7 @@ def get_josa(text, josa_type='이/가'):
 
 def generate_ending_credit(title, author, narrator):
     """엔딩 크레딧 텍스트를 생성하는 함수"""
-    return f"지금까지 {title} 이었습니다. {author}{get_josa(author)} 쓰고 {narrator}{get_josa(narrator)} 읽었으며, 이어가다에서 출판했습니다."
+    return f"지금까지 {title} 이었습니다. {author}{get_josa(author)} 쓰고, {narrator}{get_josa(narrator)} 읽었으며, 이어가다에서 출판했습니다."
 
 def text_to_speech(text, speed=1.0):
     """TTS API를 호출하여 음성을 생성하는 함수"""
