@@ -11,12 +11,16 @@ from dotenv import load_dotenv
 # 환경변수 로드
 load_dotenv()
 
-# 설정값 불러오기
-TTS_API_ENDPOINT = os.getenv('TTS_API_ENDPOINT')
-TTS_VOICE_ID = os.getenv('TTS_VOICE_ID')
+# 로깅 설정
+logging.basicConfig(level=logging.INFO)
 
-if not TTS_API_ENDPOINT or not TTS_VOICE_ID:
-    raise ValueError("TTS API 설정이 필요합니다. .env 파일을 확인해주세요.")
+# Streamlit Secrets에서 설정 가져오기
+try:
+    TTS_API_ENDPOINT = st.secrets["TTS_API_ENDPOINT"]
+    TTS_VOICE_ID = st.secrets["TTS_VOICE_ID"]
+except Exception:
+    st.error("TTS API 설정이 필요합니다. Streamlit Secrets를 확인해주세요.")
+    st.stop()
 
 def has_jongsung(text):
     """한글 문자의 받침 유무를 확인하는 함수"""
