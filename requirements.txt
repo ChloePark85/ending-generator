@@ -1,1 +1,7 @@
+# requirements.txt 내용
+streamlit
+requests
+pydub
 python-dotenv
+
+# requirements.txt로 한번에 설치
