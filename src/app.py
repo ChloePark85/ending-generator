@@ -6,21 +6,36 @@ import io
 import os
 import tempfile
 from pydub import AudioSegment
-from dotenv import load_dotenv
-
-# 환경변수 로드
-load_dotenv()
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
 
-# Streamlit Secrets에서 설정 가져오기
+# Streamlit Secrets에서 TTS 설정 가져오기
 try:
     TTS_API_ENDPOINT = st.secrets["TTS_API_ENDPOINT"]
     TTS_VOICE_ID = st.secrets["TTS_VOICE_ID"]
-except Exception:
+except Exception as e:
     st.error("TTS API 설정이 필요합니다. Streamlit Secrets를 확인해주세요.")
     st.stop()
+
+# 고정된 아웃트로 URL
+OUTRO_URL = "https://nadio-studio-open-fonts-metadata.s3.ap-northeast-2.amazonaws.com/audio/%E1%84%86%E1%85%A1%E1%84%8C%E1%85%B5%E1%84%86%E1%85%A1%E1%86%A8+%E1%84%8C%E1%85%B5%E1%86%BC%E1%84%80%E1%85%B3%E1%86%AF_nadio.wav"
+
+def download_outro():
+    """S3에서 아웃트로 음악 다운로드"""
+    try:
+        response = requests.get(OUTRO_URL)
+        if response.status_code == 200:
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.wav')
+            temp_file.write(response.content)
+            temp_file.close()
+            return temp_file.name
+        else:
+            st.error(f"엔딩 음악 다운로드 실패: {response.status_code}")
+            return None
+    except Exception as e:
+        st.error(f"엔딩 음악 다운로드 중 오류 발생: {str(e)}")
+        return None
 
 def has_jongsung(text):
     """한글 문자의 받침 유무를 확인하는 함수"""
@@ -68,6 +83,7 @@ def text_to_speech(text, speed=1.0):
         )
         
         if response.status_code == 200:
+            # WAV 파일로 저장
             temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.wav')
             temp_file.write(response.content)
             temp_file.close()
@@ -102,15 +118,15 @@ def process_audio_files(tts_path, outro_path):
         st.error(f"오디오 처리 중 오류가 발생했습니다: {str(e)}")
         return None
 
-
 def main():
     st.title("📚 이어가다 오디오북 엔딩 크레딧 생성기")
     
-    # 아웃트로 파일 경로 설정
-    outro_path = "assets/ending.wav"
+    # S3에서 아웃트로 음악 다운로드
+    with st.spinner("엔딩 음악 준비중..."):
+        outro_path = download_outro()
     
-    if not os.path.exists(outro_path):
-        st.error("엔딩 크레딧 음악 파일을 찾을 수 없습니다.")
+    if not outro_path:
+        st.error("엔딩 음악을 불러올 수 없습니다.")
         st.stop()
     
     # 입력 폼
@@ -131,7 +147,7 @@ def main():
             credit_text = generate_ending_credit(title, author, narrator)
             st.info("생성된 엔딩 크레딧: " + credit_text)
             
-            # TTS 변환 (WAV 파일로 저장)
+            # TTS 변환
             tts_path = text_to_speech(credit_text, speed)
             
             if tts_path:
@@ -162,6 +178,10 @@ def main():
                         
                 except Exception as e:
                     st.error(f"오디오 처리 중 오류가 발생했습니다: {str(e)}")
+    
+    # 마지막에 아웃트로 임시 파일 삭제
+    if outro_path and os.path.exists(outro_path):
+        os.unlink(outro_path)
 
 if __name__ == "__main__":
     main()
