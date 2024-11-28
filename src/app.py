@@ -109,9 +109,17 @@ def process_audio_files(tts_path, outro_path):
         # 오디오 순차적으로 결합
         combined = tts_audio + silence + outro_audio
         
-        # 결합된 오디오를 임시 파일로 저장
+        # 결합된 오디오를 고품질 MP3로 저장
         output_path = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3').name
-        combined.export(output_path, format='mp3')
+        combined.export(
+            output_path,
+            format='mp3',
+            parameters=[
+                "-ar", "44100",  # 샘플링 레이트 44.1kHz
+                "-b:a", "192k",  # 비트레이트 192kbps
+                "-q:a", "0"      # 최고 품질 설정
+            ]
+        )
         
         return output_path
     except Exception as e:
