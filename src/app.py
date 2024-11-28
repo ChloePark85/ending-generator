@@ -109,18 +109,16 @@ def process_audio_files(tts_path, outro_path):
         # 오디오 순차적으로 결합
         combined = tts_audio + silence + outro_audio
         
-        # 결합된 오디오를 CBR MP3로 저장
+        # 결합된 오디오를 고정 비트레이트 MP3로 저장
         output_path = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3').name
         combined.export(
             output_path,
             format='mp3',
+            bitrate='192k',  # 비트레이트 설정
             parameters=[
-                "-ar", "44100",      # 샘플링 레이트 44.1kHz
-                "-b:a", "192k",      # 비트레이트 192kbps
-                "-codec:a", "libmp3lame",  # MP3 인코더
-                "-q:a", "0",         # 최고 품질
-                "-joint_stereo", "0", # 스테레오 모드
-                "-cbr"               # Constant Bit Rate 모드
+                "-ar", "44100",  # 샘플링 레이트 44.1kHz
+                "-ac", "2",      # 스테레오
+                "-ab", "192k"    # 오디오 비트레이트
             ]
         )
         
