@@ -99,7 +99,7 @@ def text_to_speech(text, speed=1.0):
 def process_audio_files(tts_path, outro_path):
     """TTS 음성과 아웃트로 파일을 처리하고 결합하는 함수"""
     try:
-        # 오디오 파일 불러오기 (둘 다 WAV 형식)
+        # 오디오 파일 불러오기
         tts_audio = AudioSegment.from_wav(tts_path)
         outro_audio = AudioSegment.from_wav(outro_path)
         
@@ -109,15 +109,18 @@ def process_audio_files(tts_path, outro_path):
         # 오디오 순차적으로 결합
         combined = tts_audio + silence + outro_audio
         
-        # 결합된 오디오를 고품질 MP3로 저장
+        # 결합된 오디오를 CBR MP3로 저장
         output_path = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3').name
         combined.export(
             output_path,
             format='mp3',
             parameters=[
-                "-ar", "44100",  # 샘플링 레이트 44.1kHz
-                "-b:a", "192k",  # 비트레이트 192kbps
-                "-q:a", "0"      # 최고 품질 설정
+                "-ar", "44100",      # 샘플링 레이트 44.1kHz
+                "-b:a", "192k",      # 비트레이트 192kbps
+                "-codec:a", "libmp3lame",  # MP3 인코더
+                "-q:a", "0",         # 최고 품질
+                "-joint_stereo", "0", # 스테레오 모드
+                "-cbr"               # Constant Bit Rate 모드
             ]
         )
         
