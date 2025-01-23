@@ -6,6 +6,8 @@ import io
 import os
 import tempfile
 from pydub import AudioSegment
+from elevenlabs import ElevenLabs
+from datetime import datetime
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -16,6 +18,13 @@ try:
     TTS_VOICE_ID = st.secrets["TTS_VOICE_ID"]
 except Exception as e:
     st.error("TTS API 설정이 필요합니다. Streamlit Secrets를 확인해주세요.")
+    st.stop()
+
+# Streamlit Secrets에서 Elevenlabs 설정 가져오기
+try:
+    ELEVENLABS_API_KEY = st.secrets["ELEVENLABS_API_KEY"]
+except Exception as e:
+    st.error("Elevenlabs API 키가 필요합니다. Streamlit Secrets를 확인해주세요.")
     st.stop()
 
 # 고정된 아웃트로 URL
@@ -53,44 +62,45 @@ def get_josa(text, josa_type='이/가'):
         return '이' if josa_type == '이/가' else '을'
     return '가' if josa_type == '이/가' else '를'
 
+def is_korean(text):
+    """텍스트가 한글을 포함하는지 확인하는 함수"""
+    return any('가' <= char <= '힣' for char in text)
+
 def generate_ending_credit(title, author, narrator):
     """엔딩 크레딧 텍스트를 생성하는 함수"""
-    return f"지금까지 {title} 이었습니다. {author}{get_josa(author)} 쓰고, {narrator}{get_josa(narrator)} 읽었으며, 이어가다에서 출판했습니다."
+    # 타이틀, 작가, 낭독자 중 하나라도 한글이 있는지 확인
+    if is_korean(title) or is_korean(author) or is_korean(narrator):
+        return f"지금까지 {title} 이었습니다. {author}{get_josa(author)} 쓰고, {narrator}{get_josa(narrator)} 읽었으며, 이어가다에서 출판했습니다."
+    else:
+        return f"You've been listening to {title}. Written by {author}, read by {narrator}, and published by Ieogada."
 
 def text_to_speech(text, speed=1.0):
-    """TTS API를 호출하여 음성을 생성하는 함수"""
+    """Elevenlabs TTS API를 호출하여 음성을 생성하는 함수"""
     try:
-        payload = {
-            "mode": "openfont",
-            "sentences": [
-                {
-                    "type": "text",
-                    "text": text,
-                    "version": "0",
-                    "voice_id": TTS_VOICE_ID,
-                    "options": {
-                        "speed": speed
-                    }
-                }
-            ]
-        }
+        client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
         
-        logging.info("Sending TTS request")
-        response = requests.post(
-            TTS_API_ENDPOINT,
-            json=payload,
-            headers={"Content-Type": "application/json"}
+        # 음성 생성
+        audio_stream = client.text_to_speech.convert(
+            voice_id="xtPpJW6BY4c8ATbuVBO1",  # 원하는 voice_id로 변경 가능
+            text=text,
+            model_id="eleven_multilingual_v2",
+            output_format="mp3_44100_128"
         )
         
-        if response.status_code == 200:
-            # WAV 파일로 저장
-            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.wav')
-            temp_file.write(response.content)
-            temp_file.close()
-            return temp_file.name
+        # 스트림을 바이트로 변환
+        if hasattr(audio_stream, 'read'):
+            audio_bytes = audio_stream.read()
+        elif isinstance(audio_stream, (bytes, bytearray)):
+            audio_bytes = audio_stream
         else:
-            st.error(f"TTS API 오류: {response.status_code} - {response.text}")
-            return None
+            audio_bytes = b''.join(chunk for chunk in audio_stream)
+        
+        # 임시 파일로 저장
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3')
+        temp_file.write(audio_bytes)
+        temp_file.close()
+        
+        return temp_file.name
             
     except Exception as e:
         st.error(f"TTS 변환 중 오류가 발생했습니다: {str(e)}")
@@ -100,7 +110,7 @@ def process_audio_files(tts_path, outro_path):
     """TTS 음성과 아웃트로 파일을 처리하고 결합하는 함수"""
     try:
         # 오디오 파일 불러오기
-        tts_audio = AudioSegment.from_wav(tts_path)
+        tts_audio = AudioSegment.from_mp3(tts_path)  # from_wav에서 from_mp3로 변경
         outro_audio = AudioSegment.from_wav(outro_path)
         
         # 0.5초 공백 추가
@@ -109,12 +119,12 @@ def process_audio_files(tts_path, outro_path):
         # 오디오 순차적으로 결합
         combined = tts_audio + silence + outro_audio
         
-        # 결합된 오디오를 고정 비트레이트 MP3로 저장
+        # 결합된 오디오를 MP3로 저장
         output_path = tempfile.NamedTemporaryFile(delete=False, suffix='.mp3').name
         combined.export(
             output_path,
             format='mp3',
-            bitrate='192k',  # 비트레이트 설정
+            bitrate='192k',
             parameters=[
                 "-ar", "44100",  # 샘플링 레이트 44.1kHz
                 "-ac", "2",      # 스테레오
@@ -125,6 +135,7 @@ def process_audio_files(tts_path, outro_path):
         return output_path
     except Exception as e:
         st.error(f"오디오 처리 중 오류가 발생했습니다: {str(e)}")
+        logging.error(f"상세 오류: {str(e)}")  # 디버깅을 위한 로깅 추가
         return None
 
 def main():

@@ -3,5 +3,6 @@ streamlit
 requests
 pydub
 python-dotenv
+elevenlabs
 
 # requirements.txt로 한번에 설치
