@@ -72,7 +72,7 @@ def generate_ending_credit(title, author, narrator):
     if is_korean(title) or is_korean(author) or is_korean(narrator):
         return f"지금까지 {title} 이었습니다. {author}{get_josa(author)} 쓰고, {narrator}{get_josa(narrator)} 읽었으며, 이어가다에서 출판했습니다."
     else:
-        return f"You've been listening to {title}. Written by {author}, read by {narrator}, and published by Ieogada."
+        return f"You've been listening to {title}. Written by {author}, read by {narrator}, and published by Eargada."
 
 def text_to_speech(text, speed=1.0):
     """Elevenlabs TTS API를 호출하여 음성을 생성하는 함수"""
