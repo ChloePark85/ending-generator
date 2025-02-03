@@ -27,13 +27,17 @@ except Exception as e:
     st.error("Elevenlabs API 키가 필요합니다. Streamlit Secrets를 확인해주세요.")
     st.stop()
 
-# 고정된 아웃트로 URL
-OUTRO_URL = "https://nadio-studio-open-fonts-metadata.s3.ap-northeast-2.amazonaws.com/audio/%E1%84%86%E1%85%A1%E1%84%8C%E1%85%B5%E1%84%86%E1%85%A1%E1%86%A8+%E1%84%8C%E1%85%B5%E1%86%BC%E1%84%80%E1%85%B3%E1%86%AF_nadio.wav"
+# 아웃트로 URL 설정
+OUTRO_URL_KOR = "https://nadio-studio-open-fonts-metadata.s3.ap-northeast-2.amazonaws.com/audio/250203_Nadio+Logo_Kor.wav"
+OUTRO_URL_ENG = "https://nadio-studio-open-fonts-metadata.s3.ap-northeast-2.amazonaws.com/audio/250203_Nadio+Logo_Eng.wav"
 
-def download_outro():
+def download_outro(title, author, narrator):
     """S3에서 아웃트로 음악 다운로드"""
+    # 언어에 따라 적절한 아웃트로 URL 선택
+    outro_url = OUTRO_URL_KOR if (is_korean(title) or is_korean(author) or is_korean(narrator)) else OUTRO_URL_ENG
+    
     try:
-        response = requests.get(OUTRO_URL)
+        response = requests.get(outro_url)
         if response.status_code == 200:
             temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.wav')
             temp_file.write(response.content)
@@ -141,13 +145,8 @@ def process_audio_files(tts_path, outro_path):
 def main():
     st.title("📚 이어가다 오디오북 엔딩 크레딧 생성기")
     
-    # S3에서 아웃트로 음악 다운로드
-    with st.spinner("엔딩 음악 준비중..."):
-        outro_path = download_outro()
-    
-    if not outro_path:
-        st.error("엔딩 음악을 불러올 수 없습니다.")
-        st.stop()
+    # outro_path 변수 초기화
+    outro_path = None
     
     # 입력 폼
     with st.form("ending_credit_form"):
@@ -160,8 +159,16 @@ def main():
             speed = st.slider("음성 속도", min_value=0.5, max_value=2.0, value=1.0, step=0.1)
         
         submitted = st.form_submit_button("엔딩 크레딧 생성", use_container_width=True)
-        
+    
     if submitted and title and author and narrator:
+        # S3에서 아웃트로 음악 다운로드 (입력값에 따라 다른 아웃트로 선택)
+        with st.spinner("엔딩 음악 준비중..."):
+            outro_path = download_outro(title, author, narrator)
+        
+        if not outro_path:
+            st.error("엔딩 음악을 불러올 수 없습니다.")
+            st.stop()
+        
         with st.spinner('엔딩 크레딧 생성 중...'):
             # 엔딩 크레딧 텍스트 생성
             credit_text = generate_ending_credit(title, author, narrator)
