@@ -28,7 +28,7 @@ except Exception as e:
     st.stop()
 
 # 아웃트로 URL 설정
-OUTRO_URL_KOR = "https://nadio-studio-open-fonts-metadata.s3.ap-northeast-2.amazonaws.com/audio/250203_Nadio+Logo_Kor.wav"
+OUTRO_URL_KOR = "https://nadio-studio-open-fonts-metadata.s3.ap-northeast-2.amazonaws.com/audio/%E1%84%86%E1%85%A1%E1%84%8C%E1%85%B5%E1%84%86%E1%85%A1%E1%86%A8+%E1%84%8C%E1%85%B5%E1%86%BC%E1%84%80%E1%85%B3%E1%86%AF_nadio.wav"
 OUTRO_URL_ENG = "https://nadio-studio-open-fonts-metadata.s3.ap-northeast-2.amazonaws.com/audio/250203_Nadio+Logo_Eng.wav"
 
 def download_outro(title, author, narrator):
@@ -37,7 +37,10 @@ def download_outro(title, author, narrator):
     outro_url = OUTRO_URL_KOR if (is_korean(title) or is_korean(author) or is_korean(narrator)) else OUTRO_URL_ENG
     
     try:
-        response = requests.get(outro_url)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+        }
+        response = requests.get(outro_url, headers=headers)
         if response.status_code == 200:
             temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.wav')
             temp_file.write(response.content)
@@ -45,9 +48,11 @@ def download_outro(title, author, narrator):
             return temp_file.name
         else:
             st.error(f"엔딩 음악 다운로드 실패: {response.status_code}")
+            logging.error(f"다운로드 실패 URL: {outro_url}")  # URL 로깅 추가
             return None
     except Exception as e:
         st.error(f"엔딩 음악 다운로드 중 오류 발생: {str(e)}")
+        logging.error(f"다운로드 실패 URL: {outro_url}")  # URL 로깅 추가
         return None
 
 def has_jongsung(text):
