@@ -28,7 +28,7 @@ except Exception as e:
     st.stop()
 
 # 아웃트로 URL 설정
-OUTRO_URL_KOR = "https://nadio-studio-open-fonts-metadata.s3.ap-northeast-2.amazonaws.com/audio/%E1%84%86%E1%85%A1%E1%84%8C%E1%85%B5%E1%84%86%E1%85%A1%E1%86%A8+%E1%84%8C%E1%85%B5%E1%86%BC%E1%84%80%E1%85%B3%E1%86%AF_nadio.wav"
+OUTRO_URL_KOR = "https://nadio-studio-open-fonts-metadata.s3.ap-northeast-2.amazonaws.com/audio/%E1%84%86%E1%85%A1%E1%84%8C%E1%85%B5%E1%84%86%E1%85%A1%E1%86%A8+%E1%84%8C%E1%85%B5%E1%86%BC%E1%84%80%E1%85%B3%E1%86%AF_nadio_Noise+delete_rx.wav"
 OUTRO_URL_ENG = "https://nadio-studio-open-fonts-metadata.s3.ap-northeast-2.amazonaws.com/audio/250203_Nadio+Logo_Eng.wav"
 
 def download_outro(title, author, narrator):
