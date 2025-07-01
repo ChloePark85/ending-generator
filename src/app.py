@@ -88,12 +88,17 @@ def text_to_speech(text, speed=1.0):
     try:
         client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
         
-        # 음성 생성
+        # 음성 생성 (속도 설정 추가)
         audio_stream = client.text_to_speech.convert(
             voice_id="xtPpJW6BY4c8ATbuVBO1",  # 원하는 voice_id로 변경 가능
             text=text,
             model_id="eleven_multilingual_v2",
-            output_format="mp3_44100_128"
+            output_format="mp3_44100_128",
+            voice_settings={
+                "stability": 0.5,
+                "similarity_boost": 0.5,
+                "speed": speed  # 속도 설정 추가
+            }
         )
         
         # 스트림을 바이트로 변환
@@ -161,7 +166,7 @@ def main():
             author = st.text_input("작가명을 입력하세요")
         with col2:
             narrator = st.text_input("낭독자명을 입력하세요")
-            speed = st.slider("음성 속도", min_value=0.5, max_value=2.0, value=1.0, step=0.1)
+            speed = st.slider("음성 속도", min_value=0.7, max_value=1.2, value=1.0, step=0.1)
         
         submitted = st.form_submit_button("엔딩 크레딧 생성", use_container_width=True)
     
