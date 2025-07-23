@@ -79,11 +79,11 @@ def generate_ending_credit(title, author, narrator):
     """엔딩 크레딧 텍스트를 생성하는 함수"""
     # 타이틀, 작가, 낭독자 중 하나라도 한글이 있는지 확인
     if is_korean(title) or is_korean(author) or is_korean(narrator):
-        return f"지금까지 {title} 이었습니다. {author}{get_josa(author)} 쓰고, {narrator}{get_josa(narrator)} 읽었으며, 이어가다에서 출판했습니다."
+        return f"지금까지 {title} 이었습니다. {author}{get_josa(author)} 쓰고, {narrator}{get_josa(narrator)} 읽었으며, 이어가다 에서 출판했습니다."
     else:
         return f"You've been listening to {title}. Written by {author}, read by {narrator}, and published by Eargada."
 
-def text_to_speech(text, speed=1.0):
+def text_to_speech(text):
     """Elevenlabs TTS API를 호출하여 음성을 생성하는 함수"""
     try:
         client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
@@ -93,7 +93,11 @@ def text_to_speech(text, speed=1.0):
             voice_id="xtPpJW6BY4c8ATbuVBO1",  # 원하는 voice_id로 변경 가능
             text=text,
             model_id="eleven_multilingual_v2",
-            output_format="mp3_44100_128"
+            output_format="mp3_44100_128",
+            voice_settings={
+                "stability": 0.5,
+                "similarity_boost": 0.5
+            }
         )
         
         # 스트림을 바이트로 변환
@@ -161,7 +165,7 @@ def main():
             author = st.text_input("작가명을 입력하세요")
         with col2:
             narrator = st.text_input("낭독자명을 입력하세요")
-            speed = st.slider("음성 속도", min_value=0.5, max_value=2.0, value=1.0, step=0.1)
+            speed = st.slider("음성 속도", min_value=0.7, max_value=1.2, value=1.0, step=0.1)
         
         submitted = st.form_submit_button("엔딩 크레딧 생성", use_container_width=True)
     
@@ -180,7 +184,7 @@ def main():
             st.info("생성된 엔딩 크레딧: " + credit_text)
             
             # TTS 변환
-            tts_path = text_to_speech(credit_text, speed)
+            tts_path = text_to_speech(credit_text)
             
             if tts_path:
                 try:
